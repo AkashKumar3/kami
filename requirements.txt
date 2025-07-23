@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+torch
+transformers
+pdf2image
+pillow
+numpy
+fpdf
+pypdf
