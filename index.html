@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>PDF OCR Extractor</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 40px;
+        }
+
+        #result {
+            margin-top: 25px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Extract Text from PDF</h2>
+    <form id="uploadForm">
+        <input type="file" id="pdfFile" accept="application/pdf" required />
+        <button type="submit">Extract Text</button>
+    </form>
+    <div id="status"></div>
+    <h3>Extracted Text</h3>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('pdfFile');
+            const status = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerText = '';
+            if (fileInput.files.length === 0) {
+                alert('Please select a PDF file.');
+                return;
+            }
+            status.innerText = 'Extracting text, please wait...';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            // Adjust the backend API URL to your deployment (local or Render)
+            const apiUrl = 'https://kami-misj.onrender.com/extract';
+
+            // Request PDF output and convert to text with pdf.js if needed
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                body: formData,
+                headers: { 'accept': 'application/pdf' },
+            });
+
+            if (!response.ok) {
+                status.innerText = 'Error: ' + await response.text();
+                return;
+            }
+
+            // Load pdf.js to read the returned PDF (for full inline text view)
+            const pdfData = await response.arrayBuffer();
+            status.innerText = '';
+
+            // Dynamically load pdf.js from CDN
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+            script.onload = () => extractTextFromPDF(pdfData);
+            document.body.appendChild(script);
+
+            function extractTextFromPDF(pdfData) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc =
+                    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                const loadingTask = pdfjsLib.getDocument({ data: pdfData });
+                loadingTask.promise.then(async function (pdf) {
+                    let fullText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const strings = textContent.items.map(item => item.str);
+                        fullText += strings.join(' ') + '\n\n';
+                    }
+                    resultDiv.innerText = fullText.trim();
+                }, function (reason) {
+                    status.innerText = 'Error loading PDF: ' + reason;
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

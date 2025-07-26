@@ -5,5 +5,8 @@ transformers
 pdf2image
 pillow
 numpy
-fpdf
-pypdf
+einops
+shapely
+matplotlib
+timm
+python-multipart
