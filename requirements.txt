@@ -10,3 +10,4 @@ shapely
 matplotlib
 timm
 python-multipart
+fpdf
